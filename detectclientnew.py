@@ -9,13 +9,9 @@ def detect_object_client(threshold):
     try:
         detect_object = rospy.ServiceProxy('detect_object', detectobject)
         response = detect_object(threshold)
-        
-        # Debug: Log hasil dari server
-        rospy.loginfo(f"Server Response: {response.result}")
-        
         return response.result
     except rospy.ServiceException as e:
-        rospy.logerr("Service call failed: %s" % e)
+        print("Service call failed: %s" % e)
 
 def usage():
     return "%s [threshold]" % sys.argv[0]
