@@ -1,43 +1,18 @@
-#!/usr/bin/env python
-
-import rospy
-from beginner_tutorials.srv import detectobject, detectobjectResponse
 import serial
 
-def handle_detect_object(req):
+def read_sensor_data(port='/dev/ttyUSB0', baudrate=9600):
     try:
-        # Hubungkan ke sensor MaxBotix melalui USB
-        ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)  # Ganti port jika berbeda
-        raw_data = ser.readline().decode('utf-8').strip()  # Baca data sensor
-        ser.close()
-
-        # Cek apakah data yang diterima benar-benar valid
-        rospy.loginfo(f"Raw data received: {raw_data}")
-
-        # Cek jika raw_data dapat diubah menjadi float
-        try:
-            distance = float(raw_data)
-        except ValueError:
-            rospy.logerr("Received invalid data, unable to convert to float.")
-            return detectobjectResponse("Error: Invalid Data")
-
-        # Tampilkan informasi jarak dan threshold di server
-        rospy.loginfo(f"Distance: {distance} cm, Threshold: {req.threshold} cm")
-
-        # Tentukan hasil berdasarkan threshold dan kirim ke client
-        result = "ada objek" if distance <= req.threshold else "tidak ada objek"
-
-        return detectobjectResponse(result)
-
-    except Exception as e:
-        rospy.logerr(f"Error reading sensor: {e}")
-        return detectobjectResponse("Error")
-
-def detect_object_server():
-    rospy.init_node('detectobject_server')  # Inisialisasi node
-    service = rospy.Service('detect_object', detectobject, handle_detect_object)
-    rospy.loginfo("Detect Object Server is ready.")
-    rospy.spin()
+        # Membuka port serial dan menghubungkan ke sensor
+        ser = serial.Serial(port, baudrate, timeout=1)
+        print("Connected to sensor at", port)
+        
+        while True:
+            # Membaca satu baris data dari sensor
+            data = ser.readline().decode('utf-8').strip()
+            if data:
+                print("Raw Data:", data)  # Menampilkan data mentah yang diterima
+    except serial.SerialException as e:
+        print("Error connecting to sensor:", e)
 
 if __name__ == "__main__":
-    detect_object_server()
+    read_sensor_data()
