@@ -11,14 +11,24 @@ def handle_detect_object(req):
         raw_data = ser.readline().decode('utf-8').strip()  # Baca data sensor
         ser.close()
 
-        # Konversi data menjadi float
-        distance = float(raw_data)
+        # Debug: Log raw data yang diterima
+        rospy.loginfo(f"Raw data received: {raw_data}")
+
+        # Cek jika raw_data dapat diubah menjadi float
+        try:
+            distance = float(raw_data)
+        except ValueError:
+            rospy.logerr("Received invalid data, unable to convert to float.")
+            return detectobjectResponse("Error: Invalid Data")
 
         # Tampilkan informasi jarak dan threshold di server
         rospy.loginfo(f"Distance: {distance} cm, Threshold: {req.threshold} cm")
 
         # Tentukan hasil berdasarkan threshold dan kirim ke client
         result = "ada objek" if distance <= req.threshold else "tidak ada objek"
+
+        # Debug: Log hasil yang dikirim ke client
+        rospy.loginfo(f"Result to send to client: {result}")
 
         return detectobjectResponse(result)
 
