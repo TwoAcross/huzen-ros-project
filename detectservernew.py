@@ -6,29 +6,20 @@ import serial
 
 def handle_detect_object(req):
     try:
-        # Hubungkan ke sensor MaxBotix melalui USB
+        # Hubungkan ke sensor MaxBotix MB1403 HRUSB melalui USB
         ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)  # Ganti port jika berbeda
-        raw_data = ser.readline().decode('utf-8').strip()  # Baca data sensor
+        raw_data = ser.readline().decode('utf-8').strip()  # Baca data sensor dalam inci
         ser.close()
 
-        # Debug: Log raw data yang diterima
-        rospy.loginfo(f"Raw data received: {raw_data}")
-
-        # Cek jika raw_data dapat diubah menjadi float
-        try:
-            distance = float(raw_data)
-        except ValueError:
-            rospy.logerr("Received invalid data, unable to convert to float.")
-            return detectobjectResponse("Error: Invalid Data")
+        # Konversi data dari inci ke cm (1 inci = 2.54 cm)
+        distance_in_inches = float(raw_data)  # Asumsi data sensor dalam inci
+        distance_in_cm = distance_in_inches * 2.54  # Mengonversi inci ke cm
 
         # Tampilkan informasi jarak dan threshold di server
-        rospy.loginfo(f"Distance: {distance} cm, Threshold: {req.threshold} cm")
+        rospy.loginfo(f"Distance: {distance_in_cm} cm, Threshold: {req.threshold} cm")
 
         # Tentukan hasil berdasarkan threshold dan kirim ke client
-        result = "ada objek" if distance <= req.threshold else "tidak ada objek"
-
-        # Debug: Log hasil yang dikirim ke client
-        rospy.loginfo(f"Result to send to client: {result}")
+        result = "ada objek" if distance_in_cm <= req.threshold else "tidak ada objek"
 
         return detectobjectResponse(result)
 
