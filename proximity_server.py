@@ -1,26 +1,42 @@
 #!/usr/bin/env python
 
-from beginner_tutorials.srv import ProximitySensor, ProximitySensorResponse
+from __future__ import print_function
+from beginner_tutorials.srv import ProxBoolean, ProxBooleanResponse
 import rospy
-import serial
+import serial  # For serial communication
+import re      # For parsing the "Rxxxx" format
 
-def handle_proximity_sensor(req):
-    # Example logic: let's assume you already read sensor data here.
-    # Replace `sensor_data` with your actual sensor reading.
-    sensor_data = 50  # Replace this with actual sensor logic.
+def handle_proximity_request(req):
+    try:
+        # Adjust the serial port and baud rate to match your setup
+        ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
+        ser.flush()
 
-    # Logic to determine if an object is detected
-    object_detected = sensor_data < 100  # Adjust threshold as necessary.
+        if ser.in_waiting > 0:
+            # Read the raw data and decode it
+            line = ser.readline().decode('utf-8').strip()
+            print(f"Raw data received: {line}")
 
-    print("Proximity sensor data:", sensor_data)
-    print("Object detected:", object_detected)
+            # Match the "Rxxxx" format using a regular expression
+            match = re.match(r"R(\d+)", line)
+            if match:
+                distance = int(match.group(1))  # Extract the numeric part
+                print(f"Parsed distance: {distance} cm")
 
-    return ProxBooleanResponse(object_detected)
+                # Check if an object is detected (threshold: 30 cm)
+                detected = distance < 30
+                return ProxBooleanResponse(detected)
+            else:
+                print("Error: Invalid data format received")
+                return ProxBooleanResponse(False)  # Assume no object detected on error
+    except Exception as e:
+        print(f"Error reading from sensor: {e}")
+        return ProxBooleanResponse(False)  # Assume no object detected on error
 
-def proximity_sensor_server():
+def proximity_server():
     rospy.init_node('proximity_server')
-    s = rospy.Service('proximity_sensor', ProxBoolean, handle_proximity_sensor)
-    print("Proximity sensor service is ready.")
+    service = rospy.Service('proximity_sensor', ProxBoolean, handle_proximity_request)
+    print("Proximity Sensor Server is ready.")
     rospy.spin()
 
 if __name__ == "__main__":
