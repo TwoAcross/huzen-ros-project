@@ -1,0 +1,3 @@
+float64 diameter  # Input: diameter tanah
+---
+float64 luas      # Output: luas tanah
